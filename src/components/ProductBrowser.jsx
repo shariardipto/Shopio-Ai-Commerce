@@ -37,7 +37,7 @@ function scrollToProducts() {
 
 function ProductGrid({ products }) {
   return (
-    <div className="grid grid-cols-1 gap-5 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
       {products.map((product, index) => (
         // Cards fade in one after another. The first row loads its images immediately.
         <div
@@ -157,7 +157,7 @@ function Catalog({ productsPromise, query, category, sort, limit, aiResult, onCa
   return (
     <>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2">
+        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
           {["All", ...CATEGORIES].map((cat) => {
             const active = category === cat && !aiResult;
             return (
@@ -165,7 +165,7 @@ function Catalog({ productsPromise, query, category, sort, limit, aiResult, onCa
                 key={cat}
                 type="button"
                 onClick={() => onCategoryChange(cat)}
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+                className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
                   active
                     ? "bg-gray-900 text-white shadow-md"
                     : "border border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
@@ -295,7 +295,7 @@ export default function ProductBrowser({ productsPromise }) {
           <div className="absolute inset-0 bg-[radial-gradient(#c7d2fe_1px,transparent_1px)] [mask-image:linear-gradient(to_bottom,white,transparent)] bg-size-[22px_22px] opacity-40" />
         </div>
 
-        <div className="relative mx-auto max-w-3xl px-4 py-14 text-center sm:py-20">
+        <div className="relative mx-auto max-w-3xl px-4 py-10 text-center sm:py-20">
           <span className="inline-flex animate-fade-up items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm backdrop-blur">
             <Icon name="sparkles" className="h-4 w-4" />
             New: search with a photo or your camera
@@ -337,13 +337,13 @@ export default function ProductBrowser({ productsPromise }) {
       </section>
 
       {/* PRODUCTS */}
-      <section id="products" className="mx-auto max-w-6xl scroll-mt-28 px-4 py-10 sm:py-12">
+      <section id="products" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-8 sm:py-12">
         <Suspense
           fallback={
             <>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2 overflow-hidden lg:flex-wrap">
                 {[64, 104, 112, 92, 120, 84].map((width) => (
-                  <div key={width} className="skeleton h-9 rounded-full" style={{ width }} />
+                  <div key={width} className="skeleton h-9 shrink-0 rounded-full" style={{ width }} />
                 ))}
               </div>
               <div className="mt-8">

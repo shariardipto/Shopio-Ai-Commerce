@@ -32,8 +32,8 @@ export default function ProductPurchase({ product }) {
   }
 
   return (
-    <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-      <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white shadow-sm sm:justify-start">
+    <div className="mt-8 flex flex-wrap gap-3">
+      <div className="flex shrink-0 items-center rounded-xl border border-gray-200 bg-white shadow-sm">
         <button
           type="button"
           onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -57,7 +57,7 @@ export default function ProductPurchase({ product }) {
         </button>
       </div>
 
-      <button type="button" onClick={handleAdd} className="btn-primary flex-1 py-3.5">
+      <button type="button" onClick={handleAdd} className="btn-primary min-w-40 flex-1 py-3.5">
         {added ? (
           <>
             <Icon name="check" className="h-5 w-5" strokeWidth={2.5} /> Added to Cart
@@ -68,7 +68,7 @@ export default function ProductPurchase({ product }) {
           </>
         )}
       </button>
-      <button type="button" onClick={handleBuyNow} className="btn-secondary flex-1 py-3.5">
+      <button type="button" onClick={handleBuyNow} className="btn-secondary basis-full py-3.5 sm:basis-auto sm:flex-1">
         Buy Now
         <Icon name="arrowRight" className="h-4 w-4" />
       </button>

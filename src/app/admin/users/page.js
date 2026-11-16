@@ -132,9 +132,9 @@ export default async function AdminUsersPage({ searchParams }) {
         </div>
 
         {/* Plain GET form: works without JavaScript */}
-        <form action="/admin/users" className="flex gap-2">
+        <form action="/admin/users" className="flex w-full gap-2 lg:w-auto">
           {roleFilter !== "all" && <input type="hidden" name="role" value={roleFilter} />}
-          <div className="relative">
+          <div className="relative flex-1 lg:flex-none">
             <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="search"
@@ -142,7 +142,7 @@ export default async function AdminUsersPage({ searchParams }) {
               defaultValue={query}
               placeholder="Search name or email"
               aria-label="Search users"
-              className="input w-64 py-2 pl-9"
+              className="input w-full py-2 pl-9 lg:w-64"
             />
           </div>
           <button type="submit" className="btn-secondary py-2">Search</button>

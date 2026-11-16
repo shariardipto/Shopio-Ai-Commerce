@@ -17,39 +17,39 @@ export default function ProductCard({ product, eager = false }) {
           alt={product.name}
           width={400}
           height={400}
-          sizes="(min-width: 1024px) 270px, (min-width: 768px) 33vw, (min-width: 480px) 50vw, 100vw"
+          sizes="(min-width: 1024px) 270px, (min-width: 768px) 33vw, 50vw"
           loading={eager ? "eager" : "lazy"}
           className={`h-full w-full object-cover transition duration-500 group-hover:scale-105 ${outOfStock ? "opacity-60 grayscale" : ""}`}
         />
         {outOfStock && (
-          <span className="absolute top-3 left-3 rounded-full bg-gray-900/85 px-2.5 py-1 text-xs font-semibold text-white">
+          <span className="absolute top-2 left-2 rounded-full bg-gray-900/85 px-2 py-0.5 text-[10px] font-semibold text-white sm:top-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-xs">
             Out of Stock
           </span>
         )}
         {lowStock && (
-          <span className="absolute top-3 left-3 rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white">
+          <span className="absolute top-2 left-2 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white sm:top-3 sm:left-3 sm:px-2.5 sm:py-1 sm:text-xs">
             Only {product.stock} left
           </span>
         )}
       </Link>
 
-      <div className="flex flex-1 flex-col p-4">
-        <span className="text-xs font-semibold tracking-wide text-indigo-600 uppercase">
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
+        <span className="text-[10px] font-semibold tracking-wide text-indigo-600 uppercase sm:text-xs">
           {product.category}
         </span>
         <Link
           href={`/product/${product.id}`}
-          className="mt-1 line-clamp-1 font-semibold text-gray-900 transition hover:text-indigo-600"
+          className="mt-1 line-clamp-2 text-sm leading-snug font-semibold text-gray-900 transition hover:text-indigo-600 sm:line-clamp-1 sm:text-base"
         >
           {product.name}
         </Link>
-        <p className="mt-1.5 text-xl font-bold tracking-tight text-gray-900">{formatPrice(product.price)}</p>
+        <p className="mt-1.5 text-base font-bold tracking-tight text-gray-900 sm:text-xl">{formatPrice(product.price)}</p>
 
-        <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
-          <Link href={`/product/${product.id}`} className="btn-secondary px-2 text-xs lg:text-sm">
+        <div className="mt-auto grid grid-cols-1 gap-1.5 pt-3 sm:grid-cols-2 sm:gap-2 sm:pt-4">
+          <Link href={`/product/${product.id}`} className="btn-secondary px-2 py-2 text-xs lg:text-sm">
             View Details
           </Link>
-          <AddToCartButton product={product} className="px-2 text-xs lg:text-sm" />
+          <AddToCartButton product={product} className="px-2 py-2 text-xs lg:text-sm" />
         </div>
       </div>
     </div>

@@ -39,8 +39,8 @@ export default function Footer({ user, paymentSettings }) {
 
   return (
     <footer className="border-t border-gray-200 bg-white">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-10 px-4 py-10 sm:py-12 lg:grid-cols-4">
+        <div className="col-span-2 lg:col-span-1">
           <Logo />
           <p className="mt-4 text-sm leading-relaxed text-gray-600">
             AI-powered single-vendor shopping. Find products by typing a name, uploading a photo or
@@ -63,7 +63,7 @@ export default function Footer({ user, paymentSettings }) {
           </div>
         ))}
 
-        <div>
+        <div className="col-span-2 lg:col-span-1">
           <h2 className="text-sm font-semibold text-gray-900">Why Shopio</h2>
           <ul className="mt-4 space-y-2.5">
             {highlights.map((item) => (

@@ -11,10 +11,25 @@ import { matchProductsByTerms } from "@/lib/search";
   Gemini never invents products: everything shown comes from the database.
 */
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+/*
+  Models are tried in this order. "gemini-2.5-flash-lite" is the model from the
+  project brief, but Google retires old models over time. If a model no longer
+  exists, the next one is tried automatically (the "-latest" names always point
+  to Google's current Flash models). GEMINI_MODEL in .env can override the order.
+*/
+const MODELS = [
+  ...new Set(
+    [process.env.GEMINI_MODEL, "gemini-2.5-flash-lite", "gemini-flash-lite-latest", "gemini-flash-latest"].filter(Boolean)
+  ),
+];
+let workingModel = null; // remembers the model that worked, so it is tried first next time
+
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const AI_FAILED = "Unable to analyze the image right now. Please try again.";
 const MAX_RELATED = 8;
+
+// Vercel: allow enough time for the AI request.
+export const maxDuration = 30;
 
 const PROMPT = `You are an ecommerce visual product search classifier.
 
@@ -53,6 +68,60 @@ function errorResponse(message, status) {
   return Response.json({ error: message }, { status });
 }
 
+function isConfigured() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  return Boolean(apiKey && apiKey !== "your_gemini_api_key");
+}
+
+// The model name is wrong / retired -> try the next model.
+function isModelUnavailable(error) {
+  return error?.status === 404 || /not found|not supported|no longer available|deprecated/i.test(String(error?.message));
+}
+
+// Turns Gemini API errors into a clear message for the customer (and the right HTTP status).
+function friendlyAiError(error) {
+  const text = String(error?.message || "");
+  if ((error?.status === 400 && /api key/i.test(text)) || error?.status === 401 || error?.status === 403) {
+    return { status: 503, message: "AI image search is not configured correctly. Please check the Gemini API key." };
+  }
+  if (error?.status === 429 || /quota|rate limit|resource_exhausted/i.test(text)) {
+    return { status: 429, message: "AI image search is busy right now (usage limit reached). Please try again in a minute." };
+  }
+  return { status: 502, message: AI_FAILED };
+}
+
+// Asks Gemini, trying the next model if one is not available.
+async function askGemini(ai, request) {
+  const order = workingModel ? [workingModel, ...MODELS.filter((m) => m !== workingModel)] : MODELS;
+  let lastError;
+  for (const model of order) {
+    try {
+      const response = await ai.models.generateContent({ ...request, model });
+      workingModel = model;
+      return response.text;
+    } catch (error) {
+      lastError = error;
+      if (!isModelUnavailable(error)) break; // e.g. wrong key: another model will not help
+      console.warn(`Image search: model "${model}" is not available, trying the next one.`);
+    }
+  }
+  throw lastError;
+}
+
+// Gemini returns JSON; remove Markdown code fences just in case before parsing.
+function parseJson(text) {
+  const cleaned = String(text || "")
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
+  return JSON.parse(cleaned);
+}
+
+// GET /api/image-search -> quick check that the AI is set up (never shows the key).
+export function GET() {
+  return Response.json({ configured: isConfigured(), models: workingModel ? [workingModel] : MODELS });
+}
+
 // " Ballpoint PEN!! " -> "ballpoint pen"
 function cleanTerm(value) {
   if (typeof value !== "string") return "";
@@ -83,8 +152,7 @@ function normalizeDetection(raw) {
 }
 
 export async function POST(request) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey === "your_gemini_api_key") {
+  if (!isConfigured()) {
     return errorResponse("AI image search is not configured.", 503);
   }
 
@@ -106,13 +174,12 @@ export async function POST(request) {
   }
 
   // 2. Ask Gemini what the main object is.
-  let detected;
+  let text;
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const base64Image = Buffer.from(await image.arrayBuffer()).toString("base64");
 
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
+    text = await askGemini(ai, {
       contents: [
         {
           role: "user",
@@ -125,11 +192,18 @@ export async function POST(request) {
         temperature: 0.2,
       },
     });
-
-    detected = normalizeDetection(JSON.parse(response.text || ""));
   } catch (error) {
-    // Network/API errors and malformed JSON all end up here.
-    console.error("Image search: Gemini request failed:", error?.message || error);
+    // Network / API errors (wrong key, quota, model problems...).
+    console.error("Image search: Gemini request failed:", error?.status, error?.message || error);
+    const { status, message } = friendlyAiError(error);
+    return errorResponse(message, status);
+  }
+
+  let detected;
+  try {
+    detected = normalizeDetection(parseJson(text));
+  } catch {
+    console.error("Image search: Gemini returned malformed JSON:", String(text).slice(0, 200));
     return errorResponse(AI_FAILED, 502);
   }
 

@@ -166,7 +166,7 @@ export default function ImageSearchModal({ initialMode = "upload", onClose, onRe
         role="dialog"
         aria-modal="true"
         aria-labelledby="image-search-title"
-        className="max-h-[92vh] w-full max-w-md animate-slide-up overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl sm:animate-scale-in sm:rounded-3xl"
+        className="max-h-[92vh] w-full max-w-md animate-slide-up overflow-y-auto rounded-t-3xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl sm:animate-scale-in sm:rounded-3xl sm:pb-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start gap-3">

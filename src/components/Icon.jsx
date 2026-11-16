@@ -1,6 +1,7 @@
 // Small inline SVG icon set, so the project does not need an icon library.
 // Usage: <Icon name="cart" className="h-5 w-5" />
 const PATHS = {
+  home: <path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6h-6v6H4.5a1 1 0 0 1-1-1z" />,
   search: (
     <>
       <circle cx="11" cy="11" r="7" />

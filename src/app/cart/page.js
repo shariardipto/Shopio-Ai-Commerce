@@ -41,7 +41,7 @@ export default function CartPage() {
   const count = getCartCount(items);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-4 pt-10 pb-28 md:pb-10">
       <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Shopping Cart</h1>
       <p className="mt-1 text-gray-500">
         {count} {count === 1 ? "item" : "items"} in your cart
@@ -90,6 +90,19 @@ export default function CartPage() {
             <li className="flex items-center gap-2"><Icon name="truck" className="h-4 w-4 text-green-600" /> Delivery all over Bangladesh</li>
           </ul>
         </aside>
+      </div>
+
+      {/* Phones: total + checkout button always visible above the bottom tab bar */}
+      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur-lg md:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs text-gray-500">Total incl. delivery</p>
+            <p className="text-lg font-bold text-gray-900">{formatPrice(subtotal + SHIPPING_FEE)}</p>
+          </div>
+          <Link href="/checkout" className="btn-primary px-5 py-3">
+            Checkout <Icon name="arrowRight" className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
     </div>
   );

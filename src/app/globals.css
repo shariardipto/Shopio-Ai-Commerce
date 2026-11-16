@@ -44,6 +44,14 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Horizontal scroll rows (category pills) without a visible scrollbar. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* People who prefer less motion get no animations. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -80,7 +88,7 @@ html {
     @apply text-gray-600 hover:bg-gray-100 hover:text-gray-900;
   }
   .input {
-    @apply w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 focus:outline-none;
+    @apply w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-base text-gray-900 sm:text-sm shadow-sm transition placeholder:text-gray-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 focus:outline-none;
   }
   .label {
     @apply mb-1.5 block text-sm font-medium text-gray-700;

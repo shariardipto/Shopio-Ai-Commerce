@@ -31,7 +31,7 @@ export default function CartToast() {
     <div
       key={toast.id}
       role="status"
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-sm animate-slide-up items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-2xl shadow-gray-900/10 sm:right-6 sm:bottom-6 sm:left-auto sm:mx-0"
+      className="fixed inset-x-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-sm animate-slide-up items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-2xl shadow-gray-900/10 sm:right-6 sm:left-auto sm:mx-0 md:bottom-6"
     >
       <Image
         src={toast.image_url || PLACEHOLDER_IMAGE}

@@ -63,7 +63,7 @@ export default function Navbar({ user }) {
           <Link
             href="/cart"
             aria-label={`Cart, ${cartCount} items`}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition hover:bg-gray-100"
+            className="relative hidden h-10 w-10 items-center justify-center rounded-full text-gray-700 transition hover:bg-gray-100 md:flex"
           >
             <Icon name="cart" className="h-5 w-5" />
             {cartCount > 0 && (
@@ -108,14 +108,6 @@ export default function Navbar({ user }) {
         </div>
       </div>
 
-      {/* Mobile: links in a scrollable row */}
-      <nav className="flex gap-1 overflow-x-auto px-3 pb-2 md:hidden">
-        {links.map((link) => (
-          <Link key={link.href} href={link.href} className={linkClass(link.href)}>
-            {link.label}
-          </Link>
-        ))}
-      </nav>
     </header>
   );
 }

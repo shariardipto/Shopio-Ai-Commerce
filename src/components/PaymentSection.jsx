@@ -248,7 +248,7 @@ export default function PaymentSection({ payment, onChange, total, settings }) {
           return (
             <label
               key={option.value}
-              className={`relative flex cursor-pointer flex-col gap-3 rounded-xl border-2 p-4 transition ${
+              className={`relative flex cursor-pointer items-center gap-3 rounded-xl border-2 p-4 transition sm:flex-col sm:items-start ${
                 selected ? "border-indigo-500 bg-indigo-50/60" : "border-gray-200 hover:border-gray-300"
               }`}
             >

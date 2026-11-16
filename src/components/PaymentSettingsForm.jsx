@@ -150,7 +150,7 @@ export default function PaymentSettingsForm({ settings, action }) {
         </div>
       </MethodCard>
 
-      <div className="card sticky bottom-4 z-10 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="card sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-10 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between md:bottom-4">
         {message ? (
           <p className={`${message.type === "error" ? "alert-error" : "alert-success"} animate-fade-up py-2`}>{message.text}</p>
         ) : (
