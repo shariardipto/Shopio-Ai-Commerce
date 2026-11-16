@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { updateUserRole } from "@/app/admin/actions";
 import AccessDenied from "@/components/AccessDenied";
+import FilterChips from "@/components/FilterChips";
 import Icon from "@/components/Icon";
 import InlineSelect from "@/components/InlineSelect";
 import StatusBadge from "@/components/StatusBadge";
@@ -112,24 +113,16 @@ export default async function AdminUsersPage({ searchParams }) {
 
       {/* Filters */}
       <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {["all", "customer", "admin"].map((role) => (
-            <Link
-              key={role}
-              href={tabHref(role)}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition ${
-                roleFilter === role
-                  ? "bg-gray-900 text-white shadow-md"
-                  : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {role === "all" ? "All Users" : `${capitalize(role)}s`}
-              <span className={`rounded-full px-1.5 text-xs ${roleFilter === role ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
-                {counts[role]}
-              </span>
-            </Link>
-          ))}
-        </div>
+        <FilterChips
+          label="Filter by role"
+          items={["all", "customer", "admin"].map((role) => ({
+            href: tabHref(role),
+            label: role === "all" ? "All Users" : `${capitalize(role)}s`,
+            icon: role === "admin" ? "shield" : "user",
+            count: counts[role],
+            active: roleFilter === role,
+          }))}
+        />
 
         {/* Plain GET form: works without JavaScript */}
         <form action="/admin/users" className="flex w-full gap-2 lg:w-auto">

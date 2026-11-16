@@ -46,7 +46,7 @@ keywords were added for text and AI image search, and the product photos are sto
 | Database | Supabase PostgreSQL (with Row Level Security) |
 | Authentication | Supabase Auth (email + password) |
 | File storage | Supabase Storage (`product-images` bucket) |
-| AI | Google Gemini API (`@google/genai`, model `gemini-2.5-flash-lite`) |
+| AI | Google Gemini API (`@google/genai`, model `gemini-3.5-flash-lite`, see note below) |
 | Hosting | Vercel |
 
 ## How visual search works
@@ -139,8 +139,14 @@ Open http://localhost:3000.
 > Without it, everything works except image search, which shows
 > "AI image search is not configured."
 >
-> Optional: if Google retires `gemini-2.5-flash-lite`, set `GEMINI_MODEL` (e.g. to a newer
-> Flash model) in `.env.local` / Vercel — no code change needed.
+> **Gemini model:** the project brief named `gemini-2.5-flash-lite`, but Google now replies
+> "This model is no longer available to new users". The app therefore uses the current
+> `gemini-3.5-flash-lite`, falls back to other models automatically, and if Google retires a
+> model again it asks Google which models the key can use and picks the newest Flash-Lite.
+> You can force a model with the optional `GEMINI_MODEL` variable.
+>
+> Check the setup any time by opening `/api/image-search` in the browser
+> (`{"configured": true, ...}` means the key is set; the key itself is never shown).
 
 ## Supabase Setup
 

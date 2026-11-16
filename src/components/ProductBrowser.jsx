@@ -7,7 +7,7 @@ import ImageSearchModal from "@/components/ImageSearchModal";
 import ProductCard from "@/components/ProductCard";
 import SearchBar from "@/components/SearchBar";
 import { ProductGridSkeleton } from "@/components/Skeletons";
-import { CATEGORIES, capitalize } from "@/lib/shop";
+import { CATEGORIES, CATEGORY_ICONS, capitalize } from "@/lib/shop";
 import { searchProducts } from "@/lib/search";
 
 const POPULAR_SEARCHES = ["iphone", "laptop", "sneakers", "watch", "cricket bat"];
@@ -156,57 +156,66 @@ function Catalog({ productsPromise, query, category, sort, limit, aiResult, onCa
 
   return (
     <>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
-          {["All", ...CATEGORIES].map((cat) => {
-            const active = category === cat && !aiResult;
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => onCategoryChange(cat)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+      {/* Shop by Category: 3 x 2 tiles on phones (all visible at once), one row of 6 on desktop */}
+      <h2 className="mb-3 text-lg font-bold text-gray-900 sm:text-xl">Shop by Category</h2>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
+        {["All", ...CATEGORIES].map((cat) => {
+          const active = category === cat && !aiResult;
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => onCategoryChange(cat)}
+              aria-pressed={active}
+              className={`group flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center transition sm:py-4 ${
+                active
+                  ? "border-indigo-500 bg-indigo-50/70 shadow-sm ring-1 ring-indigo-500"
+                  : "border-gray-200 bg-white hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+              }`}
+            >
+              <span
+                className={`flex h-10 w-10 items-center justify-center rounded-xl transition sm:h-11 sm:w-11 ${
                   active
-                    ? "bg-gray-900 text-white shadow-md"
-                    : "border border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                    ? "bg-linear-to-br from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/30"
+                    : "bg-gray-100 text-gray-600 group-hover:bg-indigo-50 group-hover:text-indigo-600"
                 }`}
               >
-                {cat}
-                <span
-                  className={`rounded-full px-1.5 text-xs ${active ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}
-                >
-                  {counts[cat] || 0}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {!aiResult && (
-          <div className="flex items-center justify-between gap-3 lg:justify-end">
-            <p className="text-sm text-gray-500">
-              {visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"}
-              {query.trim() && (
-                <>
-                  {" "}for <span className="font-medium text-gray-900">“{query.trim()}”</span>
-                </>
-              )}
-            </p>
-            <select
-              value={sort}
-              onChange={(e) => onSortChange(e.target.value)}
-              aria-label="Sort products"
-              className="input w-auto py-2 pr-8"
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+                <Icon name={CATEGORY_ICONS[cat]} className="h-5 w-5" />
+              </span>
+              <span className={`text-xs font-semibold sm:text-sm ${active ? "text-indigo-700" : "text-gray-900"}`}>
+                {cat === "All" ? "All Products" : cat}
+              </span>
+              <span className="text-[11px] text-gray-500">{counts[cat] || 0} items</span>
+            </button>
+          );
+        })}
       </div>
+
+      {!aiResult && (
+        <div className="mt-6 flex items-center justify-between gap-3">
+          <p className="min-w-0 truncate text-sm text-gray-500">
+            <span className="font-semibold text-gray-900">{visibleProducts.length}</span>{" "}
+            {visibleProducts.length === 1 ? "product" : "products"}
+            {query.trim() && (
+              <>
+                {" "}for <span className="font-medium text-gray-900">“{query.trim()}”</span>
+              </>
+            )}
+          </p>
+          <select
+            value={sort}
+            onChange={(e) => onSortChange(e.target.value)}
+            aria-label="Sort products"
+            className="input w-auto shrink-0 py-2 pr-8 pl-3"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="mt-8">
         {aiResult ? (
@@ -341,9 +350,10 @@ export default function ProductBrowser({ productsPromise }) {
         <Suspense
           fallback={
             <>
-              <div className="flex gap-2 overflow-hidden lg:flex-wrap">
-                {[64, 104, 112, 92, 120, 84].map((width) => (
-                  <div key={width} className="skeleton h-9 shrink-0 rounded-full" style={{ width }} />
+              <div className="skeleton mb-3 h-6 w-44" />
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <div key={index} className="skeleton h-24 rounded-2xl sm:h-28" />
                 ))}
               </div>
               <div className="mt-8">

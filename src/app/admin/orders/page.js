@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { updateOrderStatus } from "@/app/admin/actions";
 import AccessDenied from "@/components/AccessDenied";
+import FilterChips from "@/components/FilterChips";
 import Icon from "@/components/Icon";
 import InlineSelect from "@/components/InlineSelect";
 import PaymentInfo from "@/components/PaymentInfo";
@@ -9,6 +10,7 @@ import { requireUser } from "@/lib/auth";
 import { ORDER_STATUSES, capitalize, formatDate, formatPrice, isUuid, shortOrderId } from "@/lib/shop";
 
 const STATUS_OPTIONS = ORDER_STATUSES.map((status) => ({ value: status, label: capitalize(status) }));
+const STATUS_ICONS = { all: "list", pending: "clock", processing: "package", completed: "check", cancelled: "x" };
 
 export const metadata = { title: "Manage Orders" };
 
@@ -31,12 +33,20 @@ export default async function AdminOrdersPage({ searchParams }) {
   if (activeStatus !== "all") query = query.eq("order_status", activeStatus);
   if (userId) query = query.eq("user_id", userId);
 
-  const [{ data: orders, error }, { data: customer }] = await Promise.all([
+  // Small query for the counts on the status chips (only the status column).
+  let countQuery = supabase.from("orders").select("order_status");
+  if (userId) countQuery = countQuery.eq("user_id", userId);
+
+  const [{ data: orders, error }, { data: customer }, { data: statusRows }] = await Promise.all([
     query,
     userId
       ? supabase.from("profiles").select("full_name, email").eq("id", userId).maybeSingle()
       : Promise.resolve({ data: null }),
+    countQuery,
   ]);
+
+  const statusCounts = { all: statusRows?.length ?? 0 };
+  for (const row of statusRows || []) statusCounts[row.order_status] = (statusCounts[row.order_status] || 0) + 1;
 
   function tabHref(tab) {
     const search = new URLSearchParams();
@@ -51,22 +61,18 @@ export default async function AdminOrdersPage({ searchParams }) {
       <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Orders</h1>
       <p className="mt-1 text-gray-600">Update order status as you prepare and deliver orders.</p>
 
-      {/* Status filter tabs */}
-      <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
-        {["all", ...ORDER_STATUSES].map((tab) => (
-          <Link
-            key={tab}
-            href={tabHref(tab)}
-            className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition ${
-              activeStatus === tab
-                ? "bg-gray-900 text-white shadow-md"
-                : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            {tab === "all" ? "All Orders" : capitalize(tab)}
-          </Link>
-        ))}
-      </div>
+      {/* Status filter */}
+      <FilterChips
+        label="Filter by order status"
+        className="mt-6"
+        items={["all", ...ORDER_STATUSES].map((tab) => ({
+          href: tabHref(tab),
+          label: tab === "all" ? "All Orders" : capitalize(tab),
+          icon: STATUS_ICONS[tab],
+          count: statusCounts[tab] || 0,
+          active: activeStatus === tab,
+        }))}
+      />
 
       {userId && (
         <p className="alert-info mt-4 flex flex-wrap items-center justify-between gap-2">

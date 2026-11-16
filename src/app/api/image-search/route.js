@@ -12,17 +12,34 @@ import { matchProductsByTerms } from "@/lib/search";
 */
 
 /*
-  Models are tried in this order. "gemini-2.5-flash-lite" is the model from the
-  project brief, but Google retires old models over time. If a model no longer
-  exists, the next one is tried automatically (the "-latest" names always point
-  to Google's current Flash models). GEMINI_MODEL in .env can override the order.
+  Models are tried in this order. The project brief named "gemini-2.5-flash-lite",
+  but Google says it is "no longer available to new users", so the current
+  Flash-Lite model is tried first. If a model is not available, the next one is
+  tried. If none work, we ask Google which models this key can use and pick the
+  newest Flash-Lite (so a future model retirement does not break image search).
+  GEMINI_MODEL in .env can put a specific model first.
 */
 const MODELS = [
   ...new Set(
-    [process.env.GEMINI_MODEL, "gemini-2.5-flash-lite", "gemini-flash-lite-latest", "gemini-flash-latest"].filter(Boolean)
+    [process.env.GEMINI_MODEL, "gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-3.8-flash"].filter(Boolean)
   ),
 ];
 let workingModel = null; // remembers the model that worked, so it is tried first next time
+
+// Asks Google for the models this API key can use and returns the newest "flash-lite" (or "flash").
+async function discoverModel(ai, alreadyTried) {
+  const available = [];
+  const pager = await ai.models.list({ config: { pageSize: 200 } });
+  for await (const model of pager) {
+    const name = String(model.name || "").replace(/^models\//, "");
+    if ((model.supportedActions || []).includes("generateContent") && !alreadyTried.includes(name)) {
+      available.push(name);
+    }
+  }
+  const version = (name) => Number(name.match(/^gemini-(\d+(?:\.\d+)?)/)?.[1] || 0);
+  const newest = (pattern) => available.filter((name) => pattern.test(name)).sort((a, b) => version(b) - version(a))[0];
+  return newest(/^gemini-[\d.]+-flash-lite$/) || newest(/^gemini-[\d.]+-flash$/) || null;
+}
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const AI_FAILED = "Unable to analyze the image right now. Please try again.";
@@ -92,9 +109,12 @@ function friendlyAiError(error) {
 
 // Asks Gemini, trying the next model if one is not available.
 async function askGemini(ai, request) {
-  const order = workingModel ? [workingModel, ...MODELS.filter((m) => m !== workingModel)] : MODELS;
+  const order = workingModel ? [workingModel, ...MODELS.filter((m) => m !== workingModel)] : [...MODELS];
   let lastError;
-  for (const model of order) {
+  let askedGoogle = false;
+
+  for (let i = 0; i < order.length; i++) {
+    const model = order[i];
     try {
       const response = await ai.models.generateContent({ ...request, model });
       workingModel = model;
@@ -103,6 +123,13 @@ async function askGemini(ai, request) {
       lastError = error;
       if (!isModelUnavailable(error)) break; // e.g. wrong key: another model will not help
       console.warn(`Image search: model "${model}" is not available, trying the next one.`);
+
+      // Last model in the list also failed: ask Google which model to use instead (only once).
+      if (i === order.length - 1 && !askedGoogle) {
+        askedGoogle = true;
+        const discovered = await discoverModel(ai, order).catch(() => null);
+        if (discovered) order.push(discovered);
+      }
     }
   }
   throw lastError;

@@ -2,6 +2,16 @@
 
 export const CATEGORIES = ["Stationery", "Electronics", "Fashion", "Accessories", "Sports"];
 
+// Icon shown next to each category (names from components/Icon.jsx).
+export const CATEGORY_ICONS = {
+  All: "grid",
+  Stationery: "pencil",
+  Electronics: "laptop",
+  Fashion: "shirt",
+  Accessories: "watch",
+  Sports: "ball",
+};
+
 // Fixed delivery charge in BDT (the database function place_order uses the same value).
 export const SHIPPING_FEE = 80;
 
