@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#fefce8"/>
+  <ellipse cx="200" cy="300" rx="135" ry="10" fill="#fef08a"/>
+  <g transform="rotate(-30 200 200)">
+    <rect x="80" y="182" width="200" height="36" fill="#facc15"/>
+    <rect x="80" y="182" width="200" height="12" fill="#fde047"/>
+    <rect x="80" y="206" width="200" height="12" fill="#eab308"/>
+    <path d="M280 182 L338 200 L280 218 Z" fill="#f5d0a9"/>
+    <path d="M322 195 L338 200 L322 205 Z" fill="#374151"/>
+    <rect x="60" y="182" width="22" height="36" fill="#9ca3af"/>
+    <rect x="66" y="182" width="3" height="36" fill="#6b7280"/>
+    <rect x="73" y="182" width="3" height="36" fill="#6b7280"/>
+    <rect x="34" y="182" width="28" height="36" rx="8" fill="#f9a8d4"/>
+    <text x="180" y="206" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#713f12" text-anchor="middle">HB</text>
+  </g>
+</svg>

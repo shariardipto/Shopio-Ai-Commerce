@@ -19,7 +19,7 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Ignored: called from a Server Component. Middleware refreshes sessions instead.
+            // Ignored: called from a Server Component. src/proxy.js refreshes sessions instead.
           }
         },
       },

@@ -1,19 +1,106 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Animations (used as Tailwind classes, e.g. "animate-fade-up") */
+@theme {
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.2s ease-out both;
+  --animate-scale-in: scale-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-slide-up: slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pop: pop 0.4s ease-out;
+  --animate-float: float 8s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(12px, -16px); }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* People who prefer less motion get no animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+  Shared styles so buttons, inputs and cards look the same on every page.
+  Utility classes written next to them (e.g. "btn-primary w-full") still win.
+*/
+@layer components {
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-linear-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 hover:from-indigo-500 hover:to-violet-500 hover:shadow-lg hover:shadow-indigo-500/30;
+  }
+  .btn-secondary {
+    @apply border border-gray-200 bg-white text-gray-700 shadow-sm hover:border-gray-300 hover:bg-gray-50;
+  }
+  .btn-danger {
+    @apply border border-red-200 bg-white text-red-600 hover:border-red-300 hover:bg-red-50;
+  }
+  .btn-ghost {
+    @apply text-gray-600 hover:bg-gray-100 hover:text-gray-900;
+  }
+  .input {
+    @apply w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 focus:outline-none;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-gray-700;
+  }
+  .card {
+    @apply rounded-2xl border border-gray-200/80 bg-white shadow-sm;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-gray-200/70;
+  }
+  .text-gradient {
+    @apply bg-linear-to-r from-indigo-600 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent;
+  }
+  .alert-error {
+    @apply rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700;
+  }
+  .alert-success {
+    @apply rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700;
+  }
+  .alert-info {
+    @apply rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800;
+  }
 }

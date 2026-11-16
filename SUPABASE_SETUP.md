@@ -1,25 +1,27 @@
-# Supabase Setup — Shopio (STEP A)
+# Supabase Setup — Shopio
 
 Follow these steps to connect Shopio to your own Supabase project.
 
 ## 1. Create a Supabase project
 
-Go to [supabase.com](https://supabase.com), sign in, and create a new project.
-Wait for provisioning to finish.
+Go to [supabase.com](https://supabase.com), sign in and create a new project.
+Wait until it has finished setting up.
 
 ## 2. Copy the project URL
 
-In your Supabase project dashboard, go to **Project Settings → API**.
-Copy the **Project URL**.
+In the project dashboard open **Project Settings → API** (or the **Connect** button) and copy the
+**Project URL**.
 
-## 3. Copy the publishable (anon) key
+## 3. Copy the publishable key
 
-On the same **API** settings page, copy the **anon / publishable** key.
-Never use the **service_role** secret key in this app — it must never be exposed to the browser.
+On the same page copy the **publishable** key (older projects call it the **anon / public** key).
 
-## 4. Add credentials to `.env.local`
+Never use the **service_role / secret** key in this app. It bypasses all security rules and must
+never be exposed to the browser. Shopio does not need it.
 
-In the project root, open (or create) `.env.local` and set:
+## 4. Add them to `.env.local`
+
+Copy `.env.example` to `.env.local` in the project root and fill in:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -27,32 +29,61 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-`GEMINI_API_KEY` is not used yet — it will be needed in STEP C.
-`.env.local` is already listed in `.gitignore` and must never be committed.
+`.env.local` is git-ignored and must never be committed.
+Get a Gemini key from [Google AI Studio](https://aistudio.google.com/apikey) (needed for AI image search).
 
-## 5. Run the schema
+## 5. Run `supabase/schema.sql`
 
-Open the Supabase **SQL Editor**, paste the full contents of `supabase/schema.sql`, and run it.
-This creates the `profiles`, `products`, `orders`, and `order_items` tables, the signup trigger,
-the `is_admin()` helper, all Row Level Security policies, and the `product-images` storage bucket.
+Open **SQL Editor → New query**, paste the full contents of `supabase/schema.sql` and click **Run**.
 
-## 6. Run the seed data
+This creates:
 
-Open the SQL Editor again, paste the full contents of `supabase/seed.sql`, and run it.
-This adds around 12 demo products used for browsing, search, and category filtering.
+- tables `profiles`, `products`, `orders`, `order_items`
+- the signup trigger (every new user gets a `customer` profile)
+- the `is_admin()` helper and the `place_order()` function used by checkout
+- all Row Level Security policies
+- the public `product-images` storage bucket and its admin-only upload policies
 
-## 7. Create a normal account
+The file is safe to run again. **If you ran an older version of `schema.sql` before, run the new
+one again** — it closes a security hole (customers could change their own role) and adds
+`place_order()`, which checkout needs.
 
-Start the app (`npm run dev`) and use the **Sign Up** page to create a normal customer account.
-Every new signup is automatically given the `customer` role — there is no way to self-assign `admin`.
+## 6. Run `supabase/seed.sql`
 
-## 8. Admin role (future step)
+Open a new query, paste the contents of `supabase/seed.sql` and click **Run**.
+This adds 12 demo products with images. Running it again does not create duplicates.
 
-STEP A does not include an admin UI. To promote an account to admin later (STEP B), an existing
-Supabase project maintainer will manually run, in the SQL Editor:
+## 7. Email confirmation (choose one)
+
+By default Supabase asks new users to confirm their email before they can log in.
+
+- **Simplest for a demo / viva:** go to **Authentication → Sign In / Providers → Email** and turn
+  off **Confirm email**. New users are logged in immediately after signing up.
+- **Keep it on:** Shopio shows "Check your email" after signup. The confirmation link returns
+  to `/auth/callback`. Make sure **Authentication → URL Configuration** contains your site URL
+  (`http://localhost:3000` locally, your Vercel URL in production) and add
+  `http://localhost:3000/**` and `https://YOUR-APP.vercel.app/**` to **Redirect URLs**.
+  Note: Supabase's built-in email service only sends a few emails per hour.
+
+## 8. Create a normal account
+
+Run the app (`npm run dev`), open **Sign Up** and create an account.
+Every new signup is a `customer` — there is no way to choose `admin` on the website.
+
+## 9. Promote one account to admin
+
+In the **SQL Editor** run (use the email you signed up with):
 
 ```sql
-update public.profiles set role = 'admin' where email = 'the_account_email@example.com';
+update public.profiles
+set role = 'admin'
+where email = 'ADMIN_EMAIL';
 ```
 
-This is intentionally a manual, dashboard-only action for security.
+Log out and log in again. The **Admin** link appears in the navbar and `/admin` opens the
+admin dashboard. To remove admin rights, set `role = 'customer'` the same way.
+
+## 10. Production (Vercel)
+
+In **Authentication → URL Configuration** set **Site URL** to your Vercel URL
+(e.g. `https://shopio.vercel.app`) and add `https://shopio.vercel.app/**` to **Redirect URLs**.

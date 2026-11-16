@@ -1,85 +1,121 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import Icon from "@/components/Icon";
+import Logo from "@/components/Logo";
 import { createClient } from "@/utils/supabase/client";
-import { getCartCount, subscribeToCart } from "@/lib/cart";
+import { getCartCount, useCart } from "@/lib/cart";
 
 export default function Navbar({ user }) {
   const router = useRouter();
-  const [cartCount, setCartCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
+  const { items } = useCart();
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  useEffect(() => {
-    setCartCount(getCartCount());
-    return subscribeToCart(() => setCartCount(getCartCount()));
-  }, []);
+  const cartCount = getCartCount(items);
+
+  const links = [
+    { href: "/", label: "Home" },
+    { href: "/cart", label: "Cart" },
+  ];
+  if (user) links.push({ href: "/my-orders", label: "My Orders" });
+  if (user?.isAdmin) links.push({ href: "/admin", label: "Admin" });
+
+  function isActive(href) {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  }
 
   async function handleLogout() {
-    setLoading(true);
+    setLoggingOut(true);
     const supabase = createClient();
     await supabase.auth.signOut();
-    setLoading(false);
+    setLoggingOut(false);
     router.push("/");
     router.refresh();
   }
 
-  return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="text-xl font-bold text-indigo-600">
-          SHOPIO
-        </Link>
+  function linkClass(href) {
+    return `rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition ${
+      isActive(href)
+        ? "bg-indigo-50 text-indigo-700"
+        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+    }`;
+  }
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-gray-700 md:flex">
-          <Link href="/" className="hover:text-indigo-600">
-            Home
-          </Link>
-          <Link href="/#search" className="hover:text-indigo-600">
-            Search
-          </Link>
-          <Link href="/cart" className="hover:text-indigo-600">
-            Cart{cartCount > 0 ? ` (${cartCount})` : ""}
-          </Link>
+  return (
+    <header className="sticky top-0 z-40 border-b border-gray-200/70 bg-white/80 backdrop-blur-lg">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+        <Logo />
+
+        <nav className="hidden items-center gap-1 md:flex">
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} className={linkClass(link.href)}>
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <Link href="/cart" className="text-sm font-medium text-gray-700 md:hidden">
-            Cart{cartCount > 0 ? ` (${cartCount})` : ""}
+        <div className="flex items-center gap-2">
+          {/* Cart icon with live item count */}
+          <Link
+            href="/cart"
+            aria-label={`Cart, ${cartCount} items`}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition hover:bg-gray-100"
+          >
+            <Icon name="cart" className="h-5 w-5" />
+            {cartCount > 0 && (
+              <span
+                key={cartCount}
+                className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 animate-pop items-center justify-center rounded-full bg-linear-to-r from-indigo-600 to-violet-600 px-1 text-[11px] font-bold text-white ring-2 ring-white"
+              >
+                {cartCount}
+              </span>
+            )}
           </Link>
 
           {user ? (
-            <div className="flex items-center gap-3">
-              <span className="hidden text-sm text-gray-600 sm:inline">
-                {user.full_name || user.email}
-              </span>
+            <>
+              <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white p-1 sm:pr-3" title={user.email}>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-violet-500 text-xs font-bold text-white uppercase">
+                  {user.name.charAt(0)}
+                </span>
+                <span className="hidden max-w-32 truncate text-sm font-medium text-gray-700 sm:inline">{user.name}</span>
+              </div>
               <button
+                type="button"
                 onClick={handleLogout}
-                disabled={loading}
-                className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                disabled={loggingOut}
+                className="btn-ghost h-10 px-3"
+                title="Logout"
               >
-                {loading ? "Logging out..." : "Logout"}
+                <Icon name="logout" className="h-5 w-5" />
+                <span className="hidden lg:inline">{loggingOut ? "Logging out..." : "Logout"}</span>
               </button>
-            </div>
+            </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/login"
-                className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
-              >
+            <>
+              <Link href="/login" className="btn-ghost px-3">
                 Login
               </Link>
-              <Link
-                href="/signup"
-                className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-              >
+              <Link href="/signup" className="btn-primary px-4">
                 Sign Up
               </Link>
-            </div>
+            </>
           )}
         </div>
       </div>
+
+      {/* Mobile: links in a scrollable row */}
+      <nav className="flex gap-1 overflow-x-auto px-3 pb-2 md:hidden">
+        {links.map((link) => (
+          <Link key={link.href} href={link.href} className={linkClass(link.href)}>
+            {link.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }
