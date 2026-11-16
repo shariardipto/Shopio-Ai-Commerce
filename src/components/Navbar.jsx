@@ -1,18 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Icon from "@/components/Icon";
 import Logo from "@/components/Logo";
-import { createClient } from "@/utils/supabase/client";
+import UserMenu from "@/components/UserMenu";
 import { getCartCount, useCart } from "@/lib/cart";
 
 export default function Navbar({ user }) {
-  const router = useRouter();
   const pathname = usePathname();
   const { items } = useCart();
-  const [loggingOut, setLoggingOut] = useState(false);
 
   const cartCount = getCartCount(items);
 
@@ -26,15 +23,6 @@ export default function Navbar({ user }) {
   function isActive(href) {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
-  }
-
-  async function handleLogout() {
-    setLoggingOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setLoggingOut(false);
-    router.push("/");
-    router.refresh();
   }
 
   function linkClass(href) {
@@ -77,24 +65,7 @@ export default function Navbar({ user }) {
           </Link>
 
           {user ? (
-            <>
-              <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white p-1 sm:pr-3" title={user.email}>
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-violet-500 text-xs font-bold text-white uppercase">
-                  {user.name.charAt(0)}
-                </span>
-                <span className="hidden max-w-32 truncate text-sm font-medium text-gray-700 sm:inline">{user.name}</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                disabled={loggingOut}
-                className="btn-ghost h-10 px-3"
-                title="Logout"
-              >
-                <Icon name="logout" className="h-5 w-5" />
-                <span className="hidden lg:inline">{loggingOut ? "Logging out..." : "Logout"}</span>
-              </button>
-            </>
+            <UserMenu user={user} />
           ) : (
             <>
               <Link href="/login" className="btn-ghost px-3">
@@ -107,7 +78,6 @@ export default function Navbar({ user }) {
           )}
         </div>
       </div>
-
     </header>
   );
 }
