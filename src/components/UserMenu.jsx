@@ -70,14 +70,14 @@ export default function UserMenu({ user }) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
-        className={`flex h-10 items-center gap-2 rounded-full border bg-white p-1 transition sm:pr-2.5 ${
+        className={`flex h-10 items-center gap-2 rounded-full border bg-white p-1 pr-2.5 transition ${
           open ? "border-indigo-300 ring-4 ring-indigo-100" : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
         }`}
       >
         <Avatar name={user.name} />
-        <span className="hidden max-w-28 truncate text-sm font-semibold text-gray-800 sm:block">{firstName}</span>
+        <span className="max-w-24 truncate text-sm font-semibold text-gray-800 sm:max-w-28">{firstName}</span>
         <svg
-          className={`hidden h-4 w-4 text-gray-400 transition sm:block ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 text-gray-400 transition ${open ? "rotate-180" : ""}`}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
