@@ -7,8 +7,8 @@ import { useEffect, useState, useTransition } from "react";
 import { placeOrder } from "@/app/checkout/actions";
 import Icon from "@/components/Icon";
 import PaymentSection, {
-  INITIAL_PAYMENT,
   SectionTitle,
+  createInitialPayment,
   getPaymentDetails,
   validatePayment,
 } from "@/components/PaymentSection";
@@ -16,14 +16,14 @@ import { clearCart, useCart } from "@/lib/cart";
 import { BD_DIVISIONS, PLACEHOLDER_IMAGE, SHIPPING_FEE, formatPrice, normalizeBdPhone } from "@/lib/shop";
 import { createClient } from "@/utils/supabase/client";
 
-export default function CheckoutForm({ defaultName, defaultEmail }) {
+export default function CheckoutForm({ defaultName, defaultEmail, paymentSettings }) {
   const router = useRouter();
   const { items, ready } = useCart();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState(null);
   const [latestProducts, setLatestProducts] = useState(null);
-  const [payment, setPayment] = useState(INITIAL_PAYMENT);
+  const [payment, setPayment] = useState(() => createInitialPayment(paymentSettings));
 
   const [details, setDetails] = useState({
     fullName: defaultName,
@@ -204,7 +204,7 @@ export default function CheckoutForm({ defaultName, defaultEmail }) {
         </section>
 
         {/* 2. Payment */}
-        <PaymentSection payment={payment} onChange={setPayment} total={total} />
+        <PaymentSection payment={payment} onChange={setPayment} total={total} settings={paymentSettings} />
       </div>
 
       {/* Order summary */}
@@ -264,7 +264,7 @@ export default function CheckoutForm({ defaultName, defaultEmail }) {
         )}
         {error && <p className="alert-error mt-4 animate-fade-up">{error}</p>}
 
-        <button type="submit" disabled={isPending || hasUnavailable} className="btn-primary mt-6 w-full py-3.5 text-base">
+        <button type="submit" disabled={isPending || hasUnavailable || !payment.option} className="btn-primary mt-6 w-full py-3.5 text-base">
           {isPending ? (
             <>
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

@@ -10,7 +10,10 @@ import { ProductGridSkeleton } from "@/components/Skeletons";
 import { CATEGORIES, capitalize } from "@/lib/shop";
 import { searchProducts } from "@/lib/search";
 
-const POPULAR_SEARCHES = ["pen", "mouse", "notebook", "backpack", "shoes"];
+const POPULAR_SEARCHES = ["iphone", "laptop", "sneakers", "watch", "cricket bat"];
+
+// Products shown at first; "Show more" adds this many each time.
+const PAGE_SIZE = 16;
 
 const SORT_OPTIONS = [
   { value: "recommended", label: "Recommended" },
@@ -130,7 +133,7 @@ function AiResults({ result, onClear }) {
 }
 
 // Reads the streamed products (React `use`) and shows filters + the product grid.
-function Catalog({ productsPromise, query, category, sort, aiResult, onCategoryChange, onSortChange, onClearAi, onReset }) {
+function Catalog({ productsPromise, query, category, sort, limit, aiResult, onCategoryChange, onSortChange, onClearAi, onReset, onShowMore }) {
   const { products, error } = use(productsPromise);
 
   const counts = useMemo(() => {
@@ -220,7 +223,19 @@ function Catalog({ productsPromise, query, category, sort, aiResult, onCategoryC
             </button>
           </div>
         ) : (
-          <ProductGrid products={visibleProducts} />
+          <>
+            <ProductGrid products={visibleProducts.slice(0, limit)} />
+            {visibleProducts.length > limit && (
+              <div className="mt-10 flex flex-col items-center gap-2">
+                <p className="text-sm text-gray-500">
+                  Showing {limit} of {visibleProducts.length} products
+                </p>
+                <button type="button" onClick={onShowMore} className="btn-secondary px-6">
+                  Show more products
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>
@@ -231,6 +246,7 @@ export default function ProductBrowser({ productsPromise }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState("recommended");
+  const [limit, setLimit] = useState(PAGE_SIZE);
   // null = closed, "upload" = Image Search, "camera" = Camera Search
   const [imageSearchMode, setImageSearchMode] = useState(null);
   const [aiResult, setAiResult] = useState(null);
@@ -244,20 +260,29 @@ export default function ProductBrowser({ productsPromise }) {
   }
 
   // Typing or choosing a category returns to the normal product list.
+  // Changing the search, category or sort starts again from the first page.
   function handleQueryChange(value) {
     setQuery(value);
     setAiResult(null);
+    setLimit(PAGE_SIZE);
   }
 
   function handleCategoryChange(value) {
     setCategory(value);
     setAiResult(null);
+    setLimit(PAGE_SIZE);
+  }
+
+  function handleSortChange(value) {
+    setSort(value);
+    setLimit(PAGE_SIZE);
   }
 
   function resetFilters() {
     setQuery("");
     setCategory("All");
     setAiResult(null);
+    setLimit(PAGE_SIZE);
   }
 
   return (
@@ -317,7 +342,7 @@ export default function ProductBrowser({ productsPromise }) {
           fallback={
             <>
               <div className="flex flex-wrap gap-2">
-                {[64, 104, 112, 92, 120].map((width) => (
+                {[64, 104, 112, 92, 120, 84].map((width) => (
                   <div key={width} className="skeleton h-9 rounded-full" style={{ width }} />
                 ))}
               </div>
@@ -332,11 +357,13 @@ export default function ProductBrowser({ productsPromise }) {
             query={query}
             category={category}
             sort={sort}
+            limit={limit}
             aiResult={aiResult}
             onCategoryChange={handleCategoryChange}
-            onSortChange={setSort}
+            onSortChange={handleSortChange}
             onClearAi={() => setAiResult(null)}
             onReset={resetFilters}
+            onShowMore={() => setLimit((current) => current + PAGE_SIZE)}
           />
         </Suspense>
       </section>

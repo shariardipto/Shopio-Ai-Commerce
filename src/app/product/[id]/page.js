@@ -6,7 +6,8 @@ import PaymentBadges from "@/components/PaymentBadges";
 import ProductCard from "@/components/ProductCard";
 import ProductPurchase from "@/components/ProductPurchase";
 import { ProductGridSkeleton } from "@/components/Skeletons";
-import { PLACEHOLDER_IMAGE, SHIPPING_FEE, formatPrice, isUuid } from "@/lib/shop";
+import { PAYMENT_METHOD_LABELS, PLACEHOLDER_IMAGE, SHIPPING_FEE, formatPrice, getEnabledMethods, isUuid } from "@/lib/shop";
+import { getPaymentSettings } from "@/lib/settings";
 import { createClient } from "@/utils/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -51,15 +52,10 @@ async function RelatedProducts({ product }) {
   );
 }
 
-const PERKS = [
-  { icon: "truck", title: "All over Bangladesh", text: `Flat ${formatPrice(SHIPPING_FEE)} · 2–5 days` },
-  { icon: "cash", title: "Cash on Delivery", text: "Or bKash, Nagad, Rocket, card" },
-  { icon: "shield", title: "Secure checkout", text: "Protected by Supabase Auth" },
-];
 
 export default async function ProductDetailsPage({ params }) {
   const { id } = await params;
-  const product = await getProduct(id);
+  const [product, paymentSettings] = await Promise.all([getProduct(id), getPaymentSettings()]);
 
   if (!product) {
     return (
@@ -78,6 +74,17 @@ export default async function ProductDetailsPage({ params }) {
 
   const inStock = product.stock > 0;
   const lowStock = inStock && product.stock <= 10;
+
+  // Short list of the payment methods the admin has turned on, e.g. "Cash on Delivery · bKash · Card".
+  const paymentText = getEnabledMethods(paymentSettings)
+    .map((method) => PAYMENT_METHOD_LABELS[method])
+    .join(" · ");
+
+  const perks = [
+    { icon: "truck", title: "All over Bangladesh", text: `Flat ${formatPrice(SHIPPING_FEE)} · 2–5 days` },
+    { icon: "cash", title: "Easy payment", text: paymentText || "Online payment" },
+    { icon: "shield", title: "Secure checkout", text: "Protected by Supabase Auth" },
+  ];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
@@ -133,7 +140,7 @@ export default async function ProductDetailsPage({ params }) {
           <ProductPurchase product={product} />
 
           <div className="mt-8 grid gap-3 border-t border-gray-200 pt-6 sm:grid-cols-3">
-            {PERKS.map((perk) => (
+            {perks.map((perk) => (
               <div key={perk.title} className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                   <Icon name={perk.icon} className="h-5 w-5" />
@@ -148,7 +155,7 @@ export default async function ProductDetailsPage({ params }) {
 
           <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-gray-500">
             <span className="font-medium">We accept:</span>
-            <PaymentBadges />
+            <PaymentBadges settings={paymentSettings} />
           </div>
         </div>
       </div>

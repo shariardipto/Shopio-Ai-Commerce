@@ -11,11 +11,17 @@ export default async function AdminDashboardPage() {
   const { supabase, isAdmin, profile } = await requireUser("/admin");
   if (!isAdmin) return <AccessDenied />;
 
-  // All four queries run at the same time. head: true -> only count rows, do not download them.
-  const [products, orders, pendingOrders, recent] = await Promise.all([
+  // All queries run at the same time. head: true -> only count rows, do not download them.
+  const [products, orders, pendingOrders, customers, unpaid, recent] = await Promise.all([
     supabase.from("products").select("id", { count: "exact", head: true }),
     supabase.from("orders").select("id", { count: "exact", head: true }),
     supabase.from("orders").select("id", { count: "exact", head: true }).eq("order_status", "pending"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "customer"),
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("payment_status", "pending")
+      .neq("order_status", "cancelled"),
     supabase
       .from("orders")
       .select("id, created_at, full_name, total, order_status")
@@ -27,6 +33,7 @@ export default async function AdminDashboardPage() {
     { label: "Total Products", value: products.count ?? 0, icon: "package", color: "from-indigo-500 to-violet-500", href: "/admin/products" },
     { label: "Total Orders", value: orders.count ?? 0, icon: "list", color: "from-sky-500 to-blue-600", href: "/admin/orders" },
     { label: "Pending Orders", value: pendingOrders.count ?? 0, icon: "clock", color: "from-amber-400 to-orange-500", href: "/admin/orders?status=pending" },
+    { label: "Customers", value: customers.count ?? 0, icon: "user", color: "from-emerald-500 to-teal-600", href: "/admin/users?role=customer" },
   ];
 
   return (
@@ -36,7 +43,7 @@ export default async function AdminDashboardPage() {
         Welcome back{profile?.full_name ? `, ${profile.full_name}` : ""}. Here&apos;s what&apos;s happening in your store.
       </p>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
           <Link
             key={stat.label}
@@ -58,12 +65,21 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-8 flex flex-col flex-wrap gap-3 sm:flex-row">
         <Link href="/admin/products" className="btn-primary">
           <Icon name="package" className="h-4 w-4" /> Manage Products
         </Link>
         <Link href="/admin/orders" className="btn-secondary">
           <Icon name="list" className="h-4 w-4" /> View Orders
+        </Link>
+        <Link href="/admin/payments" className="btn-secondary">
+          <Icon name="cash" className="h-4 w-4" /> Payments
+          {(unpaid.count ?? 0) > 0 && (
+            <span className="rounded-full bg-amber-100 px-2 text-xs font-bold text-amber-700">{unpaid.count} to collect</span>
+          )}
+        </Link>
+        <Link href="/admin/users" className="btn-secondary">
+          <Icon name="user" className="h-4 w-4" /> Users
         </Link>
         <Link href="/" className="btn-secondary">
           <Icon name="store" className="h-4 w-4" /> Go to Store

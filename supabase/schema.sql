@@ -68,6 +68,28 @@ create table if not exists public.order_items (
   quantity integer
 );
 
+-- PAYMENT SETTINGS: one row that the admin edits on /admin/payments.
+-- Turns payment methods on/off and stores the (demo) merchant numbers and bank account.
+create table if not exists public.payment_settings (
+  id integer primary key default 1 check (id = 1),
+  cod_enabled boolean not null default true,
+  bkash_enabled boolean not null default true,
+  bkash_number text not null default '01700000001',
+  nagad_enabled boolean not null default true,
+  nagad_number text not null default '01700000002',
+  rocket_enabled boolean not null default true,
+  rocket_number text not null default '01700000003',
+  card_enabled boolean not null default true,
+  bank_enabled boolean not null default true,
+  bank_name text not null default 'Demo Bank PLC',
+  bank_account_name text not null default 'Shopio Ltd.',
+  bank_account_number text not null default '1234-5678-9012',
+  bank_branch text not null default 'Gulshan, Dhaka',
+  updated_at timestamp with time zone default now()
+);
+
+insert into public.payment_settings (id) values (1) on conflict (id) do nothing;
+
 -- ------------------------------------------------------------
 -- Indexes (faster "my orders", order items and related-product lookups)
 -- ------------------------------------------------------------
@@ -93,7 +115,7 @@ alter table public.orders add constraint orders_payment_method_check
 
 alter table public.orders drop constraint if exists orders_payment_status_check;
 alter table public.orders add constraint orders_payment_status_check
-  check (payment_status in ('pending', 'paid_demo'));
+  check (payment_status in ('pending', 'paid', 'paid_demo', 'failed'));
 
 alter table public.orders drop constraint if exists orders_order_status_check;
 alter table public.orders add constraint orders_order_status_check
@@ -149,6 +171,11 @@ create trigger products_set_updated_at
   before update on public.products
   for each row execute procedure public.set_updated_at();
 
+drop trigger if exists payment_settings_set_updated_at on public.payment_settings;
+create trigger payment_settings_set_updated_at
+  before update on public.payment_settings
+  for each row execute procedure public.set_updated_at();
+
 -- ============================================================
 -- 3. HELPER: is_admin()
 -- SECURITY DEFINER lets it read profiles without triggering the
@@ -199,6 +226,7 @@ declare
   v_item jsonb;
   v_quantity integer;
   v_product public.products%rowtype;
+  v_settings public.payment_settings%rowtype;
 begin
   if v_user_id is null then
     raise exception 'Please log in to place your order.';
@@ -216,6 +244,20 @@ begin
 
   if p_payment_method not in ('cod', 'bkash', 'nagad', 'rocket', 'card', 'bank') then
     raise exception 'Please choose a valid payment method.';
+  end if;
+
+  -- The admin can turn payment methods off on /admin/payments.
+  select * into v_settings from public.payment_settings where id = 1;
+  -- (The CASE is wrapped in brackets so PL/pgSQL does not stop reading at its first THEN.)
+  if found and not (case p_payment_method
+      when 'cod' then v_settings.cod_enabled
+      when 'bkash' then v_settings.bkash_enabled
+      when 'nagad' then v_settings.nagad_enabled
+      when 'rocket' then v_settings.rocket_enabled
+      when 'card' then v_settings.card_enabled
+      when 'bank' then v_settings.bank_enabled
+    end) then
+    raise exception 'This payment method is currently unavailable. Please choose another one.';
   end if;
 
   -- Card and mobile banking need the last 4 digits of the card / wallet number.
@@ -282,6 +324,38 @@ $$;
 -- Only logged-in users may call place_order.
 revoke execute on function public.place_order(text, text, text, text, text, text, text, jsonb) from public, anon;
 grant execute on function public.place_order(text, text, text, text, text, text, text, jsonb) to authenticated;
+
+-- ============================================================
+-- 4b. CHANGE A USER'S ROLE (admin only, used on /admin/users)
+-- Customers cannot change roles (they can only edit their own full_name).
+-- An admin cannot change their OWN role, so the store always keeps at
+-- least one admin. The very first admin is still created manually in SQL.
+-- ============================================================
+create or replace function public.set_user_role(p_user_id uuid, p_role text)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Only admins can change user roles.';
+  end if;
+  if p_role not in ('customer', 'admin') then
+    raise exception 'Invalid role.';
+  end if;
+  if p_user_id = auth.uid() then
+    raise exception 'You cannot change your own role.';
+  end if;
+
+  update public.profiles set role = p_role where id = p_user_id;
+  if not found then
+    raise exception 'User not found.';
+  end if;
+end;
+$$;
+
+revoke execute on function public.set_user_role(uuid, text) from public, anon;
+grant execute on function public.set_user_role(uuid, text) to authenticated;
 
 -- ============================================================
 -- 5. ROW LEVEL SECURITY
@@ -362,13 +436,30 @@ create policy "Users can read own order items"
     )
   );
 
+-- ---------------- PAYMENT SETTINGS ----------------
+-- Everyone can read them (checkout shows merchant numbers); only admins can change them.
+alter table public.payment_settings enable row level security;
+grant select on public.payment_settings to anon, authenticated;
+grant update on public.payment_settings to authenticated;
+
+drop policy if exists "Anyone can read payment settings" on public.payment_settings;
+create policy "Anyone can read payment settings"
+  on public.payment_settings for select
+  using (true);
+
+drop policy if exists "Admins can update payment settings" on public.payment_settings;
+create policy "Admins can update payment settings"
+  on public.payment_settings for update
+  using ((select public.is_admin()))
+  with check ((select public.is_admin()));
+
 -- ============================================================
 -- 6. STORAGE: product-images bucket
 -- Public can view images; only admins can upload/update/delete.
 -- ============================================================
 insert into storage.buckets (id, name, public)
 values ('product-images', 'product-images', true)
-on conflict (id) do update set public = true;
+on conflict (id) do nothing;
 
 drop policy if exists "Public can view product images" on storage.objects;
 create policy "Public can view product images"

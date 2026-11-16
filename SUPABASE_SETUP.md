@@ -80,10 +80,19 @@ set role = 'admin'
 where email = 'ADMIN_EMAIL';
 ```
 
-Log out and log in again. The **Admin** link appears in the navbar and `/admin` opens the
-admin dashboard. To remove admin rights, set `role = 'customer'` the same way.
+Refresh the page. The **Admin** link appears in the navbar and `/admin` opens the
+admin dashboard.
 
-## 10. Production (Vercel)
+You only need SQL for this **first** admin. After that, go to **Admin → Users** to make other
+accounts admin or customer (an admin cannot change their own role, so there is always one admin).
+
+## 10. Payment setup
+
+Go to **Admin → Payments** to turn payment methods on/off (Cash on Delivery, bKash, Nagad,
+Rocket, Card, Bank Transfer), set your bKash / Nagad / Rocket merchant numbers and bank account,
+and mark customer payments as Paid or Failed after checking the TrxID.
+
+## 11. Production (Vercel)
 
 In **Authentication → URL Configuration** set **Site URL** to your Vercel URL
 (e.g. `https://shopio.vercel.app`) and add `https://shopio.vercel.app/**` to **Redirect URLs**.

@@ -8,6 +8,8 @@ const LINKS = [
   { href: "/admin", label: "Dashboard", icon: "grid" },
   { href: "/admin/products", label: "Products", icon: "package" },
   { href: "/admin/orders", label: "Orders", icon: "list" },
+  { href: "/admin/payments", label: "Payments", icon: "cash" },
+  { href: "/admin/users", label: "Users", icon: "user" },
 ];
 
 // Admin menu with the current page highlighted.

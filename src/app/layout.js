@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CartToast from "@/components/CartToast";
 import { getCurrentUser } from "@/lib/auth";
+import { getPaymentSettings } from "@/lib/settings";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,7 +22,11 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function RootLayout({ children }) {
-  const { user, profile, isAdmin } = await getCurrentUser();
+  // Both run at the same time.
+  const [{ user, profile, isAdmin }, paymentSettings] = await Promise.all([
+    getCurrentUser(),
+    getPaymentSettings(),
+  ]);
 
   // Only the few fields the navbar needs are sent to the browser.
   const navUser = user
@@ -33,7 +38,7 @@ export default async function RootLayout({ children }) {
       <body className="flex min-h-full flex-col bg-gray-50 font-sans text-gray-900">
         <Navbar user={navUser} />
         <main className="flex-1">{children}</main>
-        <Footer user={navUser} />
+        <Footer user={navUser} paymentSettings={paymentSettings} />
         <CartToast />
       </body>
     </html>

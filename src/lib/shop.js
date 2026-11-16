@@ -1,6 +1,6 @@
 // Shared constants and small helpers used across Shopio.
 
-export const CATEGORIES = ["Stationery", "Electronics", "Fashion", "Accessories"];
+export const CATEGORIES = ["Stationery", "Electronics", "Fashion", "Accessories", "Sports"];
 
 // Fixed delivery charge in BDT (the database function place_order uses the same value).
 export const SHIPPING_FEE = 80;
@@ -22,20 +22,32 @@ export const PAYMENT_METHOD_LABELS = {
   bank: "Bank Transfer",
 };
 
-// Mobile banking wallets. The merchant numbers are fake demo numbers.
+// Order of the payment methods everywhere in the app.
+export const PAYMENT_METHODS = ["cod", "bkash", "nagad", "rocket", "card", "bank"];
+
+// Mobile banking wallets. Merchant numbers are set by the admin on /admin/payments.
 export const MOBILE_WALLETS = [
-  { value: "bkash", label: "bKash", color: "#E2136E", ussd: "*247#", merchant: "01700-000001" },
-  { value: "nagad", label: "Nagad", color: "#F15A22", ussd: "*167#", merchant: "01700-000002" },
-  { value: "rocket", label: "Rocket", color: "#8C3494", ussd: "*322#", merchant: "01700-000003" },
+  { value: "bkash", label: "bKash", color: "#E2136E", ussd: "*247#" },
+  { value: "nagad", label: "Nagad", color: "#F15A22", ussd: "*167#" },
+  { value: "rocket", label: "Rocket", color: "#8C3494", ussd: "*322#" },
 ];
 
-// Demo bank account shown for "Bank Transfer".
-export const DEMO_BANK_ACCOUNT = {
-  bank: "Demo Bank PLC",
-  name: "Shopio Ltd.",
-  number: "1234-5678-9012",
-  branch: "Gulshan, Dhaka",
+// Methods the admin has turned on, e.g. ["cod", "bkash", "card"].
+export function getEnabledMethods(settings) {
+  return PAYMENT_METHODS.filter((method) => settings?.[`${method}_enabled`]);
+}
+
+// orders.payment_status values. The admin can change them on /admin/payments.
+export const PAYMENT_STATUSES = ["pending", "paid", "paid_demo", "failed"];
+export const PAYMENT_STATUS_LABELS = {
+  pending: "Pending",
+  paid: "Paid",
+  paid_demo: "Paid (Demo)",
+  failed: "Failed",
 };
+
+// ---------- Users ----------
+export const USER_ROLES = ["customer", "admin"];
 
 // ---------- Delivery (Bangladesh) ----------
 export const BD_DIVISIONS = [
@@ -57,6 +69,12 @@ export function normalizeBdPhone(value) {
   let digits = String(value || "").replace(/\D/g, "");
   if (digits.startsWith("880")) digits = digits.slice(2); // 8801XXXXXXXXX -> 01XXXXXXXXX
   return /^01[3-9]\d{8}$/.test(digits) ? digits : null;
+}
+
+// "01700000001" -> "01700-000001" (easier to read)
+export function formatBdPhone(value) {
+  const digits = normalizeBdPhone(value);
+  return digits ? `${digits.slice(0, 5)}-${digits.slice(5)}` : String(value || "");
 }
 
 // Bangladeshi number format with lakh/crore grouping: 120000 -> "৳1,20,000".

@@ -86,7 +86,7 @@ export default function CartPage() {
 
           <ul className="mt-6 space-y-2 border-t border-gray-100 pt-5 text-xs text-gray-500">
             <li className="flex items-center gap-2"><Icon name="shield" className="h-4 w-4 text-green-600" /> Secure checkout</li>
-            <li className="flex items-center gap-2"><Icon name="cash" className="h-4 w-4 text-green-600" /> Cash on Delivery, bKash, Nagad, Rocket & card</li>
+            <li className="flex items-center gap-2"><Icon name="cash" className="h-4 w-4 text-green-600" /> Cash on Delivery & online payment</li>
             <li className="flex items-center gap-2"><Icon name="truck" className="h-4 w-4 text-green-600" /> Delivery all over Bangladesh</li>
           </ul>
         </aside>

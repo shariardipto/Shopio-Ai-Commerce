@@ -1,11 +1,14 @@
 import Link from "next/link";
+import { updateOrderStatus } from "@/app/admin/actions";
 import AccessDenied from "@/components/AccessDenied";
 import Icon from "@/components/Icon";
-import OrderStatusSelect from "@/components/OrderStatusSelect";
+import InlineSelect from "@/components/InlineSelect";
 import PaymentInfo from "@/components/PaymentInfo";
 import StatusBadge from "@/components/StatusBadge";
 import { requireUser } from "@/lib/auth";
-import { ORDER_STATUSES, capitalize, formatDate, formatPrice, shortOrderId } from "@/lib/shop";
+import { ORDER_STATUSES, capitalize, formatDate, formatPrice, isUuid, shortOrderId } from "@/lib/shop";
+
+const STATUS_OPTIONS = ORDER_STATUSES.map((status) => ({ value: status, label: capitalize(status) }));
 
 export const metadata = { title: "Manage Orders" };
 
@@ -13,9 +16,10 @@ export default async function AdminOrdersPage({ searchParams }) {
   const { supabase, isAdmin } = await requireUser("/admin/orders");
   if (!isAdmin) return <AccessDenied />;
 
-  // Optional filter from the tabs: /admin/orders?status=pending
-  const { status } = await searchParams;
+  // Optional filters: /admin/orders?status=pending and /admin/orders?user=<id> (from the Users page)
+  const { status, user } = await searchParams;
   const activeStatus = ORDER_STATUSES.includes(status) ? status : "all";
+  const userId = isUuid(user) ? user : null;
 
   // Admins can read all orders (allowed by the RLS policy using is_admin()).
   let query = supabase
@@ -25,7 +29,22 @@ export default async function AdminOrdersPage({ searchParams }) {
     )
     .order("created_at", { ascending: false });
   if (activeStatus !== "all") query = query.eq("order_status", activeStatus);
-  const { data: orders, error } = await query;
+  if (userId) query = query.eq("user_id", userId);
+
+  const [{ data: orders, error }, { data: customer }] = await Promise.all([
+    query,
+    userId
+      ? supabase.from("profiles").select("full_name, email").eq("id", userId).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  function tabHref(tab) {
+    const search = new URLSearchParams();
+    if (tab !== "all") search.set("status", tab);
+    if (userId) search.set("user", userId);
+    const text = search.toString();
+    return text ? `/admin/orders?${text}` : "/admin/orders";
+  }
 
   return (
     <div>
@@ -37,7 +56,7 @@ export default async function AdminOrdersPage({ searchParams }) {
         {["all", ...ORDER_STATUSES].map((tab) => (
           <Link
             key={tab}
-            href={tab === "all" ? "/admin/orders" : `/admin/orders?status=${tab}`}
+            href={tabHref(tab)}
             className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition ${
               activeStatus === tab
                 ? "bg-gray-900 text-white shadow-md"
@@ -48,6 +67,17 @@ export default async function AdminOrdersPage({ searchParams }) {
           </Link>
         ))}
       </div>
+
+      {userId && (
+        <p className="alert-info mt-4 flex flex-wrap items-center justify-between gap-2">
+          <span>
+            Showing orders of <span className="font-semibold">{customer?.full_name || customer?.email || "this user"}</span>
+          </span>
+          <Link href={activeStatus === "all" ? "/admin/orders" : `/admin/orders?status=${activeStatus}`} className="font-medium underline">
+            Show all customers
+          </Link>
+        </p>
+      )}
 
       {error && <p className="alert-error mt-6">Could not load orders.</p>}
 
@@ -107,7 +137,12 @@ export default async function AdminOrdersPage({ searchParams }) {
                     </div>
                   </td>
                   <td className="px-5 py-4">
-                    <OrderStatusSelect orderId={order.id} status={order.order_status} />
+                    <InlineSelect
+                      action={updateOrderStatus.bind(null, order.id)}
+                      value={order.order_status}
+                      options={STATUS_OPTIONS}
+                      label="Order status"
+                    />
                   </td>
                 </tr>
               ))}

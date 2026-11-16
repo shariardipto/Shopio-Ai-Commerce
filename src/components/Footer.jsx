@@ -5,7 +5,7 @@ import PaymentBadges from "@/components/PaymentBadges";
 import { SHIPPING_FEE, formatPrice } from "@/lib/shop";
 
 // Site footer shown on every page (rendered by the root layout).
-export default function Footer({ user }) {
+export default function Footer({ user, paymentSettings }) {
   const accountLinks = user
     ? [
         { href: "/my-orders", label: "My Orders" },
@@ -32,7 +32,7 @@ export default function Footer({ user }) {
 
   const highlights = [
     { icon: "sparkles", text: "Search by text, photo or camera" },
-    { icon: "cash", text: "Cash on Delivery, bKash, Nagad & Rocket" },
+    { icon: "cash", text: "Easy & flexible payment options" },
     { icon: "truck", text: `Delivery all over Bangladesh · ${formatPrice(SHIPPING_FEE)}` },
     { icon: "shield", text: "Secure login with Supabase" },
   ];
@@ -83,7 +83,7 @@ export default function Footer({ user }) {
           <p>© {new Date().getFullYear()} Shopio. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-gray-600">We accept:</span>
-            <PaymentBadges />
+            <PaymentBadges settings={paymentSettings} />
           </div>
         </div>
       </div>

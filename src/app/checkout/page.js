@@ -1,6 +1,7 @@
 import CheckoutForm from "@/components/CheckoutForm";
 import Icon from "@/components/Icon";
 import { requireUser } from "@/lib/auth";
+import { getPaymentSettings } from "@/lib/settings";
 
 export const metadata = { title: "Checkout" };
 
@@ -8,7 +9,10 @@ const STEPS = ["Cart", "Checkout", "Done"];
 
 export default async function CheckoutPage() {
   // Logged-out users are sent to /login and come back here afterwards.
-  const { user, profile } = await requireUser("/checkout");
+  const [{ user, profile }, paymentSettings] = await Promise.all([
+    requireUser("/checkout"),
+    getPaymentSettings(),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -42,7 +46,11 @@ export default async function CheckoutPage() {
         </ol>
       </div>
 
-      <CheckoutForm defaultName={profile?.full_name || ""} defaultEmail={profile?.email || user.email} />
+      <CheckoutForm
+        defaultName={profile?.full_name || ""}
+        defaultEmail={profile?.email || user.email}
+        paymentSettings={paymentSettings}
+      />
     </div>
   );
 }

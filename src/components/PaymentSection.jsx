@@ -1,7 +1,7 @@
 "use client";
 
 import Icon from "@/components/Icon";
-import { DEMO_BANK_ACCOUNT, MOBILE_WALLETS, formatPrice, normalizeBdPhone } from "@/lib/shop";
+import { MOBILE_WALLETS, formatBdPhone, formatPrice, normalizeBdPhone } from "@/lib/shop";
 
 /*
   PAYMENT (Bangladesh) — 3 options:
@@ -11,23 +11,45 @@ import { DEMO_BANK_ACCOUNT, MOBILE_WALLETS, formatPrice, normalizeBdPhone } from
   All online payments are DEMO only. Only safe details are sent to the server:
   last 4 digits of the card/wallet number and the TrxID / bank reference.
   Card number, expiry, CVV, PIN and OTP never leave the browser.
+  Which methods appear (and the merchant numbers / bank account) comes from
+  the admin's payment settings (/admin/payments).
 */
 
-export const INITIAL_PAYMENT = {
-  option: "cod", // "cod" | "mobile" | "online"
-  wallet: "bkash", // "bkash" | "nagad" | "rocket"
-  onlineType: "card", // "card" | "bank"
-  walletNumber: "",
-  trxId: "",
-  card: { name: "", number: "", expiry: "", cvv: "" },
-  bankReference: "",
-};
+// What the admin has turned on, ready for the UI.
+export function getPaymentOptions(settings) {
+  const wallets = MOBILE_WALLETS.filter((wallet) => settings[`${wallet.value}_enabled`]).map((wallet) => ({
+    ...wallet,
+    merchant: formatBdPhone(settings[`${wallet.value}_number`]),
+  }));
+  const onlineTypes = [settings.card_enabled && "card", settings.bank_enabled && "bank"].filter(Boolean);
 
-const OPTIONS = [
-  { value: "cod", title: "Cash on Delivery", hint: "Pay in cash when it arrives", icon: "cash" },
-  { value: "mobile", title: "Mobile Banking", hint: "bKash · Nagad · Rocket", icon: "phone" },
-  { value: "online", title: "Card / Bank", hint: "Visa · Mastercard · Bank", icon: "card" },
-];
+  const options = [];
+  if (settings.cod_enabled) {
+    options.push({ value: "cod", title: "Cash on Delivery", hint: "Pay in cash when it arrives", icon: "cash" });
+  }
+  if (wallets.length > 0) {
+    options.push({ value: "mobile", title: "Mobile Banking", hint: wallets.map((w) => w.label).join(" · "), icon: "phone" });
+  }
+  if (onlineTypes.length > 0) {
+    const hint = [settings.card_enabled && "Visa · Mastercard", settings.bank_enabled && "Bank"].filter(Boolean).join(" · ");
+    options.push({ value: "online", title: settings.card_enabled ? "Card / Bank" : "Bank Transfer", hint, icon: "card" });
+  }
+  return { options, wallets, onlineTypes };
+}
+
+// Starting state: the first payment option the admin has turned on.
+export function createInitialPayment(settings) {
+  const { options, wallets, onlineTypes } = getPaymentOptions(settings);
+  return {
+    option: options[0]?.value ?? null, // "cod" | "mobile" | "online"
+    wallet: wallets[0]?.value ?? "bkash", // "bkash" | "nagad" | "rocket"
+    onlineType: onlineTypes[0] ?? "card", // "card" | "bank"
+    walletNumber: "",
+    trxId: "",
+    card: { name: "", number: "", expiry: "", cvv: "" },
+    bankReference: "",
+  };
+}
 
 // ---------- card helpers ----------
 function cardBrand(digits) {
@@ -69,6 +91,8 @@ function passesLuhn(digits) {
 
 // ---------- validation + what we send to the server ----------
 export function validatePayment(payment) {
+  if (!payment.option) return "No payment method is available right now.";
+
   if (payment.option === "mobile") {
     const wallet = MOBILE_WALLETS.find((w) => w.value === payment.wallet);
     if (!normalizeBdPhone(payment.walletNumber)) {
@@ -195,19 +219,31 @@ function SegmentedControl({ value, options, onChange }) {
 }
 
 // ---------- the payment section ----------
-export default function PaymentSection({ payment, onChange, total }) {
+export default function PaymentSection({ payment, onChange, total, settings }) {
   const update = (changes) => onChange({ ...payment, ...changes });
   const updateCard = (changes) => update({ card: { ...payment.card, ...changes } });
-  const wallet = MOBILE_WALLETS.find((w) => w.value === payment.wallet);
+  const { options, wallets, onlineTypes } = getPaymentOptions(settings);
+  const wallet = wallets.find((w) => w.value === payment.wallet) || wallets[0];
   const digits = payment.card.number.replace(/\s/g, "");
+
+  if (options.length === 0) {
+    return (
+      <section className="card p-6">
+        <SectionTitle number="2">Payment Method</SectionTitle>
+        <p className="alert-error mt-5">No payment method is available right now. Please try again later.</p>
+      </section>
+    );
+  }
+
+  const columns = { 1: "", 2: "sm:grid-cols-2", 3: "sm:grid-cols-3" };
 
   return (
     <section className="card p-6">
       <SectionTitle number="2">Payment Method</SectionTitle>
 
-      {/* The 3 payment options */}
-      <div className="mt-5 grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Payment method">
-        {OPTIONS.map((option) => {
+      {/* The payment options the admin has turned on (up to 3) */}
+      <div className={`mt-5 grid gap-3 ${columns[options.length]}`} role="radiogroup" aria-label="Payment method">
+        {options.map((option) => {
           const selected = payment.option === option.value;
           return (
             <label
@@ -259,8 +295,8 @@ export default function PaymentSection({ payment, onChange, total }) {
       {/* 2. Mobile Banking: bKash / Nagad / Rocket */}
       {payment.option === "mobile" && (
         <div className="mt-6 animate-fade-up space-y-5">
-          <div className="grid grid-cols-3 gap-2">
-            {MOBILE_WALLETS.map((item) => {
+          <div className={`grid gap-2 ${["", "grid-cols-1", "grid-cols-2", "grid-cols-3"][wallets.length]}`}>
+            {wallets.map((item) => {
               const selected = payment.wallet === item.value;
               return (
                 <button
@@ -335,14 +371,16 @@ export default function PaymentSection({ payment, onChange, total }) {
       {/* 3. Card / Bank */}
       {payment.option === "online" && (
         <div className="mt-6 animate-fade-up space-y-5">
-          <SegmentedControl
-            value={payment.onlineType}
-            onChange={(value) => update({ onlineType: value })}
-            options={[
-              { value: "card", label: "Credit / Debit Card", icon: "card" },
-              { value: "bank", label: "Bank Transfer", icon: "bank" },
-            ]}
-          />
+          {onlineTypes.length > 1 && (
+            <SegmentedControl
+              value={payment.onlineType}
+              onChange={(value) => update({ onlineType: value })}
+              options={[
+                { value: "card", label: "Credit / Debit Card", icon: "card" },
+                { value: "bank", label: "Bank Transfer", icon: "bank" },
+              ]}
+            />
+          )}
 
           {payment.onlineType === "card" ? (
             <>
@@ -388,13 +426,13 @@ export default function PaymentSection({ payment, onChange, total }) {
                 </p>
                 <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <dt className="text-gray-500">Bank</dt>
-                  <dd className="font-medium text-gray-900">{DEMO_BANK_ACCOUNT.bank}</dd>
+                  <dd className="font-medium text-gray-900">{settings.bank_name}</dd>
                   <dt className="text-gray-500">Account Name</dt>
-                  <dd className="font-medium text-gray-900">{DEMO_BANK_ACCOUNT.name}</dd>
+                  <dd className="font-medium text-gray-900">{settings.bank_account_name}</dd>
                   <dt className="text-gray-500">Account No.</dt>
-                  <dd className="font-mono font-medium text-gray-900">{DEMO_BANK_ACCOUNT.number}</dd>
+                  <dd className="font-mono font-medium text-gray-900">{settings.bank_account_number}</dd>
                   <dt className="text-gray-500">Branch</dt>
-                  <dd className="font-medium text-gray-900">{DEMO_BANK_ACCOUNT.branch}</dd>
+                  <dd className="font-medium text-gray-900">{settings.bank_branch}</dd>
                 </dl>
               </div>
               <div>
@@ -408,7 +446,7 @@ export default function PaymentSection({ payment, onChange, total }) {
                   className="input font-mono uppercase"
                 />
               </div>
-              <DemoNote>Demo payment only — this is not a real bank account and no money is transferred.</DemoNote>
+              <DemoNote>Demo payment only — no money is transferred in this demo store.</DemoNote>
             </>
           )}
         </div>

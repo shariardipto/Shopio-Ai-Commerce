@@ -7,6 +7,15 @@ products from a single vendor.
 
 The application includes traditional text search and AI-powered visual product search.
 
+## Demo Data
+
+`supabase/seed.sql` adds **62 products** in 5 categories (Stationery, Electronics, Fashion,
+Accessories, Sports): 12 Shopio demo items plus **50 real products** (iPhone, Samsung, Realme,
+MacBook, Dell XPS, Nike, Puma, Longines, cricket gear and more) from the free
+[DummyJSON](https://dummyjson.com) demo dataset. Prices are converted to BDT (1 USD ≈ ৳120),
+keywords were added for text and AI image search, and the product photos are stored in
+`public/images/products/` so the store does not depend on another website.
+
 ## Core Features
 
 - Customer registration / login
@@ -23,9 +32,11 @@ The application includes traditional text search and AI-powered visual product s
   2. Mobile banking — bKash, Nagad, Rocket (demo)
   3. Card or bank transfer (demo)
 - My Orders with order progress tracker
-- Admin dashboard
-- Product management
-- Order management
+- Admin dashboard (products, orders, pending orders, customers, recent orders)
+- Product management (add / edit / delete with image upload)
+- Order management (status filter, per-customer orders)
+- Payment setup (turn methods on/off, merchant numbers, bank account, verify payments)
+- User management (search, order count, total spent) and role management (customer / admin)
 
 ## Technology
 
@@ -154,6 +165,8 @@ Supabase **SQL Editor**:
 
 Nobody can make themselves admin from the website: the signup trigger always creates a
 `customer` profile, and customers are only allowed to change their own `full_name`.
+After the first admin exists, other roles are managed on **Admin → Users** through the
+`set_user_role()` database function (admin-only; admins cannot change their own role).
 
 ## Payments (Bangladesh, demo)
 
