@@ -53,13 +53,22 @@ one again** — it closes a security hole (customers could change their own role
 Open a new query, paste the contents of `supabase/seed.sql` and click **Run**.
 This adds 12 demo products with images. Running it again does not create duplicates.
 
-## 7. Email confirmation (choose one)
+## 7. Disable email confirmation for Shopio signup
 
-By default Supabase asks new users to confirm their email before they can log in.
+Shopio's signup form asks only for an email address and password. Configure Supabase to
+return a login session immediately, without sending an OTP or confirmation link:
 
-- **Simplest for a demo / viva:** go to **Authentication → Sign In / Providers → Email** and turn
-  off **Confirm email**. New users are logged in immediately after signing up.
-- **Keep it on:** Shopio shows "Check your email" after signup. The confirmation link returns
+1. Open **Authentication → Sign In / Providers** in your Supabase project.
+2. Turn off **Confirm email** (it may be inside the **Email** provider) and **save**.
+3. Keep the **Email** provider and email/password signups enabled.
+
+This is a hosted Supabase setting; editing the form or deploying the app cannot change it.
+New users are logged in immediately after signup, and provide their full name at checkout.
+Their email ownership is not verified in this mode.
+
+### If you enable email confirmation later
+
+- Shopio retains a "Check your email" fallback if Supabase requires confirmation. The confirmation link returns
   to `/auth/callback`. Make sure **Authentication → URL Configuration** contains your site URL
   (`http://localhost:3000` locally, your Vercel URL in production) and add
   `http://localhost:3000/**` and `https://YOUR-APP.vercel.app/**` to **Redirect URLs**.

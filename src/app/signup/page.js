@@ -15,10 +15,8 @@ export default function SignupPage({ searchParams }) {
   const next = safeRedirectPath(params.next);
   const router = useRouter();
   const [form, setForm] = useState({
-    fullName: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,19 +32,10 @@ export default function SignupPage({ searchParams }) {
     if (submitting.current) return;
     setError("");
 
-    if (!form.fullName.trim()) {
-      setError("Please enter your full name.");
-      return;
-    }
     if (form.password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
     submitting.current = true;
     setLoading(true);
     try {
@@ -57,7 +46,6 @@ export default function SignupPage({ searchParams }) {
         email: form.email.trim(),
         password: form.password,
         options: {
-          data: { full_name: form.fullName.trim() },
           emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         },
       });
@@ -103,34 +91,19 @@ export default function SignupPage({ searchParams }) {
     );
   }
 
-  const passwordsMatch = form.confirmPassword && form.password === form.confirmPassword;
-
   return (
     <AuthShell title="Create your account" subtitle="Join Shopio to start shopping.">
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
-        <div>
-          <label htmlFor="fullName" className="label">Full Name</label>
-          <input id="fullName" type="text" name="fullName" required autoComplete="name" placeholder="Your full name" value={form.fullName} onChange={handleChange} className="input" />
-        </div>
-
         <div>
           <label htmlFor="email" className="label">Email</label>
           <input id="email" type="email" name="email" required autoComplete="email" placeholder="you@example.com" value={form.email} onChange={handleChange} className="input" />
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <label htmlFor="password" className="label">Password</label>
-            <PasswordInput id="password" name="password" minLength={6} autoComplete="new-password" value={form.password} onChange={handleChange} />
-          </div>
-          <div>
-            <label htmlFor="confirmPassword" className="label">Confirm Password</label>
-            <PasswordInput id="confirmPassword" name="confirmPassword" autoComplete="new-password" value={form.confirmPassword} onChange={handleChange} />
-          </div>
+        <div>
+          <label htmlFor="password" className="label">Password</label>
+          <PasswordInput id="password" name="password" minLength={6} autoComplete="new-password" value={form.password} onChange={handleChange} />
         </div>
-        <p className={`-mt-2 text-xs ${passwordsMatch ? "text-green-600" : "text-gray-500"}`}>
-          {passwordsMatch ? "✓ Passwords match" : "At least 6 characters."}
-        </p>
+        <p className="-mt-2 text-xs text-gray-500">At least 6 characters.</p>
 
         {error && <p role="alert" className="alert-error animate-fade-up">{error}</p>}
 
