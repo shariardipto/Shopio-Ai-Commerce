@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthShell from "@/components/AuthShell";
@@ -8,6 +8,7 @@ import Icon from "@/components/Icon";
 import PasswordInput from "@/components/PasswordInput";
 import { createClient } from "@/utils/supabase/client";
 import { safeRedirectPath } from "@/lib/shop";
+import { signupErrorMessage } from "@/lib/signup-errors";
 
 export default function SignupPage({ searchParams }) {
   const params = use(searchParams);
@@ -22,6 +23,7 @@ export default function SignupPage({ searchParams }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+  const submitting = useRef(false);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -29,6 +31,7 @@ export default function SignupPage({ searchParams }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (submitting.current) return;
     setError("");
 
     if (!form.fullName.trim()) {
@@ -44,34 +47,40 @@ export default function SignupPage({ searchParams }) {
       return;
     }
 
+    submitting.current = true;
     setLoading(true);
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    // The role is never sent from here: the database trigger always creates a 'customer' profile.
-    const { data, error } = await supabase.auth.signUp({
-      email: form.email.trim(),
-      password: form.password,
-      options: {
-        data: { full_name: form.fullName.trim() },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
+      // The database trigger always creates a 'customer' profile.
+      const { data, error } = await supabase.auth.signUp({
+        email: form.email.trim(),
+        password: form.password,
+        options: {
+          data: { full_name: form.fullName.trim() },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      });
 
-    if (error) {
+      if (error) {
+        setError(signupErrorMessage(error));
+        return;
+      }
+
+      // With "Confirm email" off, signup returns a session and logs the user in.
+      if (!data.session) {
+        setCheckEmail(true);
+        return;
+      }
+
+      router.push(next);
+      router.refresh();
+    } catch {
+      setError("Could not connect to signup. Please check your connection and try again.");
+    } finally {
+      submitting.current = false;
       setLoading(false);
-      setError(error.message || "Could not create account. Please try again.");
-      return;
     }
-
-    // If "Confirm email" is turned on in Supabase, there is no session yet.
-    if (!data.session) {
-      setLoading(false);
-      setCheckEmail(true);
-      return;
-    }
-
-    router.push(next);
-    router.refresh();
   }
 
   if (checkEmail) {
@@ -123,7 +132,7 @@ export default function SignupPage({ searchParams }) {
           {passwordsMatch ? "✓ Passwords match" : "At least 6 characters."}
         </p>
 
-        {error && <p className="alert-error animate-fade-up">{error}</p>}
+        {error && <p role="alert" className="alert-error animate-fade-up">{error}</p>}
 
         <button type="submit" disabled={loading} className="btn-primary mt-1 w-full py-3">
           {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}

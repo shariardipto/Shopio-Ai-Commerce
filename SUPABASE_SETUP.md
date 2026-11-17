@@ -63,7 +63,24 @@ By default Supabase asks new users to confirm their email before they can log in
   to `/auth/callback`. Make sure **Authentication → URL Configuration** contains your site URL
   (`http://localhost:3000` locally, your Vercel URL in production) and add
   `http://localhost:3000/**` and `https://YOUR-APP.vercel.app/**` to **Redirect URLs**.
-  Note: Supabase's built-in email service only sends a few emails per hour.
+  For real customer signups, configure [custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp).
+  Supabase's built-in sender is for testing, sends only to project team members, and is limited
+  to **2 emails per hour across the project**. See [Auth rate limits](https://supabase.com/docs/guides/auth/rate-limits).
+
+### Fix "email rate limit exceeded" during signup
+
+This error comes from Supabase Auth's email quota. Retrying signup or restarting Next.js does
+not reset it, and a browser environment variable cannot disable hosted email confirmation.
+
+For the Shopio demo, open your Supabase project, go to **Authentication → Sign In / Providers**,
+turn off **Confirm email**, and **save**. Depending on the dashboard version, the toggle may
+be inside the **Email** provider. Signup then returns a session immediately and Shopio logs
+the new customer in without sending a confirmation email. Email ownership is not verified
+in this mode; use it for the demo only.
+
+To verify the fix, sign up once with a new demo email address. You should reach the shop
+and see the logged-in account menu, with no "Check your email" screen. No app rebuild is
+needed for this Supabase setting change.
 
 ## 8. Create a normal account
 
